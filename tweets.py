@@ -1,48 +1,24 @@
-from tweepy.streaming import StreamListener
-from tweepy import OAuthHandler
-from tweepy import Stream
-
+import tweepy
 import twitter_credentials
+####input your credentials here
+consumer_key = twitter_credentials.CONSUMER_KEY
+consumer_secret = twitter_credentials.CONSUMER_SECRET
+access_token = twitter_credentials.ACCESS_TOKEN
+access_token_secret = twitter_credentials.ACCESS_TOKEN_SECRET
 
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+api = tweepy.API(auth,wait_on_rate_limit=True)
+#####United Airlines
+# Open/Create a file to append data
+new = []
+for tweet in tweepy.Cursor(api.search,q="corona",count=50,
+                           lang="en",
+                           since="2020-08-21").items():
+    new_d = {}
+    print (tweet.created_at, tweet.retweet_count)
 
-class TwitterStreamer():
-
-    def __init__(self):
-        pass
-
-    def stream_tweets(self, fetched_tweets_filename, hash_tag_list):
-
-        listener = StdOutListener(fetched_tweets_filename)
-        auth = OAuthHandler(twitter_credentials.CONSUMER_KEY, twitter_credentials.CONSUMER_SECRET)
-        auth.set_access_token(twitter_credentials.ACCESS_TOKEN, twitter_credentials.ACCESS_TOKEN_SECRET)
-        stream = Stream(auth, listener)
-
-        stream.filter(track=hash_tag_list)
-
-
-class StdOutListener(StreamListener):
-
-
-    def __init__(self, fetched_tweets_filename):
-        self.fetched_tweets_filename = fetched_tweets_filename
-
-    def on_data(self, data):
-        try:
-            print(data)
-            with open(self.fetched_tweets_filename, 'a') as tf:
-                tf.write(data)
-            return True
-        except BaseException as e:
-            print("Error on_data %s" % str(e))
-        return True
-
-    def on_error(self, status):
-        print(status)
-
-
-if __name__ == '__main__':
-    hash_tag_list = ["corona"]
-    fetched_tweets_filename = "tweets.json"
-
-    twitter_streamer = TwitterStreamer()
-    twitter_streamer.stream_tweets(fetched_tweets_filename, hash_tag_list)
+    new_d['screen_name'] = tweet.user.screen_name
+    new_d['retweet_count'] = tweet.retweet_count
+    with open("retweets.json",'a') as tf:
+        tf.write(str(new_d)+",\n")
